@@ -7,6 +7,7 @@ OBJ_DIR = obj
 
 COMMON_SRCS = $(SRC_DIR)/common.c $(SRC_DIR)/compress.c $(SRC_DIR)/tls.c $(SRC_DIR)/logger.c
 COMMON_OBJS = $(COMMON_SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
+COMMON_SRCS = $(SRC_DIR)/common.c $(SRC_DIR)/compress.c $(SRC_DIR)/tls.c $(SRC_DIR)/logger.c $(SRC_DIR)/net_io.c
 
 all: industrial_agent control_proxy
 
