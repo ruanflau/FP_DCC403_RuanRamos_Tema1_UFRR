@@ -1,0 +1,5 @@
+=== CAPTURA DE REDE (tcpdump) ===
+Payload: cat /etc/services
+Sem compressao: 8.9 KB
+Com compressao: 4.6 KB
+Reducao: 48.3%
