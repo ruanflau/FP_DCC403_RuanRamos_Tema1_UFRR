@@ -20,9 +20,8 @@ ssize_t net_send(Connection *conn, const unsigned char *data, size_t len)
     }
 
     if (conn->ssl)
-    {
-        return SSL_write(conn->ssl, out_data, out_len);
-    }
+        return SSL_write(conn->ssl, out_data, (int)out_len);
+
     return write(conn->sockfd, out_data, out_len);
 }
 
@@ -32,13 +31,10 @@ ssize_t net_recv(Connection *conn, unsigned char *buf, size_t maxlen)
     ssize_t n;
 
     if (conn->ssl)
-    {
-        n = SSL_read(conn->ssl, rawbuf, sizeof(rawbuf));
-    }
+        n = SSL_read(conn->ssl, rawbuf, (int)sizeof(rawbuf));
     else
-    {
         n = read(conn->sockfd, rawbuf, sizeof(rawbuf));
-    }
+
     if (n <= 0)
         return n;
 
@@ -46,12 +42,12 @@ ssize_t net_recv(Connection *conn, unsigned char *buf, size_t maxlen)
     {
         size_t dlen = maxlen;
         if (decompress_data(rawbuf, n, buf, &dlen) == 0)
-            return dlen;
+            return (ssize_t)dlen;
         return -1;
     }
 
     if ((size_t)n > maxlen)
-        n = maxlen;
+        n = (ssize_t)maxlen;
     memcpy(buf, rawbuf, n);
     return n;
 }

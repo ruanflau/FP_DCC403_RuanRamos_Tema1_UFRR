@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <sys/wait.h>
 #include <netinet/in.h>
 #include <openssl/ssl.h>
@@ -19,15 +20,32 @@
 
 static SSL_CTX *g_ssl_ctx = NULL;
 
-/* 2.7 - Coleta filhos terminados sem bloquear (anti-zombie) */
 void sigchld_handler(int sig)
 {
     (void)sig;
-    int saved_errno = errno;
+    int saved = errno;
     while (waitpid(-1, NULL, WNOHANG) > 0)
     {
     }
-    errno = saved_errno;
+    errno = saved;
+}
+
+static ssize_t timed_recv(Connection *conn, unsigned char *buf, size_t maxlen)
+{
+    if (conn->ssl)
+    {
+        fd_set rfd;
+        struct timeval tv;
+        FD_ZERO(&rfd);
+        FD_SET(conn->sockfd, &rfd);
+        tv.tv_sec = 0;
+        tv.tv_usec = 50000;
+        int r = select(conn->sockfd + 1, &rfd, NULL, NULL, &tv);
+        if (r <= 0 && SSL_pending(conn->ssl) == 0 && !SSL_has_pending(conn->ssl))
+            return -2;
+        return net_recv(conn, buf, maxlen);
+    }
+    return net_recv(conn, buf, maxlen);
 }
 
 void handle_client(int client_fd, AppConfig *cfg)
@@ -37,7 +55,6 @@ void handle_client(int client_fd, AppConfig *cfg)
     conn.cfg = cfg;
     conn.ssl = NULL;
 
-    /* 2.8 - Handshake TLS, se ativo, antes de qualquer dado trafegar */
     if (cfg->use_encrypt)
     {
         conn.ssl = SSL_new(g_ssl_ctx);
@@ -51,7 +68,6 @@ void handle_client(int client_fd, AppConfig *cfg)
         }
     }
 
-    /* 2.3 - Criacao dos pipes para o shell */
     int in_pipe[2], out_pipe[2];
     if (pipe(in_pipe) < 0 || pipe(out_pipe) < 0)
     {
@@ -62,18 +78,14 @@ void handle_client(int client_fd, AppConfig *cfg)
     pid_t shell_pid = fork();
     if (shell_pid == 0)
     {
-        /* "neto": vira o shell */
-        setpgid(0, 0); /* novo process group, usado pelo killpg() no SIGINT */
-
+        setpgid(0, 0);
         dup2(in_pipe[0], STDIN_FILENO);
         dup2(out_pipe[1], STDOUT_FILENO);
         dup2(out_pipe[1], STDERR_FILENO);
-
         close(in_pipe[0]);
         close(in_pipe[1]);
         close(out_pipe[0]);
         close(out_pipe[1]);
-
         execl(SHELL_PATH, SHELL_PATH, (char *)NULL);
         perror("execl");
         exit(1);
@@ -84,65 +96,77 @@ void handle_client(int client_fd, AppConfig *cfg)
     int shell_write_fd = in_pipe[1];
     int shell_read_fd = out_pipe[0];
 
-    /* 2.4 - Loop de multiplexacao de I/O */
     fd_set readfds;
     unsigned char buf[BUFFER_SIZE];
     unsigned char netbuf[BUFFER_SIZE * 2];
+    struct timeval tv;
 
     while (1)
     {
         FD_ZERO(&readfds);
         FD_SET(client_fd, &readfds);
-        if (shell_read_fd != -1)
-            FD_SET(shell_read_fd, &readfds);
+        FD_SET(shell_read_fd, &readfds);
         int maxfd = (client_fd > shell_read_fd) ? client_fd : shell_read_fd;
 
-        int activity = select(maxfd + 1, &readfds, NULL, NULL, NULL);
+        tv.tv_sec = 0;
+        tv.tv_usec = 100000;
+
+        int activity = select(maxfd + 1, &readfds, NULL, NULL, &tv);
         if (activity < 0)
         {
             if (errno == EINTR)
                 continue;
-            perror("select");
             break;
         }
 
-        if (FD_ISSET(client_fd, &readfds))
-        {
-            ssize_t n = net_recv(&conn, netbuf, sizeof(netbuf));
-            if (n <= 0)
-                break;
+        /* Rede -> shell */
+        int has_ssl_data = conn.ssl &&
+                           (SSL_pending(conn.ssl) > 0 || SSL_has_pending(conn.ssl));
 
-            /* 2.5 - Traducao de CTRL+C e CTRL+D vindos da rede */
-            for (ssize_t i = 0; i < n; i++)
+        if (has_ssl_data || (activity > 0 && FD_ISSET(client_fd, &readfds)))
+        {
+            do
             {
-                if (netbuf[i] == CTRL_C)
+                ssize_t n = timed_recv(&conn, netbuf, sizeof(netbuf));
+                if (n == -2)
+                    break;
+                if (n <= 0)
+                    goto end_session;
+
+                for (ssize_t i = 0; i < n; i++)
                 {
-                    killpg(shell_pid, SIGINT);
-                }
-                else if (netbuf[i] == CTRL_D)
-                {
-                    if (shell_write_fd != -1)
+                    if (netbuf[i] == CTRL_C)
                     {
-                        close(shell_write_fd);
-                        shell_write_fd = -1;
+                        killpg(shell_pid, SIGINT);
+                    }
+                    else if (netbuf[i] == CTRL_D)
+                    {
+                        if (shell_write_fd != -1)
+                        {
+                            close(shell_write_fd);
+                            shell_write_fd = -1;
+                        }
+                    }
+                    else if (shell_write_fd != -1)
+                    {
+                        write(shell_write_fd, &netbuf[i], 1);
                     }
                 }
-                else if (shell_write_fd != -1)
-                {
-                    write(shell_write_fd, &netbuf[i], 1);
-                }
-            }
+            } while (conn.ssl &&
+                     (SSL_pending(conn.ssl) > 0 || SSL_has_pending(conn.ssl)));
         }
 
-        if (shell_read_fd != -1 && FD_ISSET(shell_read_fd, &readfds))
+        /* Shell -> rede */
+        if (activity > 0 && shell_read_fd != -1 && FD_ISSET(shell_read_fd, &readfds))
         {
             ssize_t n = read(shell_read_fd, buf, sizeof(buf));
             if (n <= 0)
-                break;
+                goto end_session;
             net_send(&conn, buf, n);
         }
     }
 
+end_session:
     if (conn.ssl)
     {
         SSL_shutdown(conn.ssl);
@@ -153,7 +177,6 @@ void handle_client(int client_fd, AppConfig *cfg)
         close(shell_write_fd);
     if (shell_read_fd != -1)
         close(shell_read_fd);
-
     waitpid(shell_pid, NULL, 0);
     exit(0);
 }
@@ -174,7 +197,7 @@ int main(int argc, char *argv[])
         g_ssl_ctx = tls_init_server_ctx("certs/server.crt", "certs/server.key");
         if (!g_ssl_ctx)
         {
-            fprintf(stderr, "Falha ao inicializar contexto TLS\n");
+            fprintf(stderr, "Falha ao inicializar TLS\n");
             return 1;
         }
     }
@@ -185,7 +208,6 @@ int main(int argc, char *argv[])
     sa.sa_flags = SA_RESTART;
     sigaction(SIGCHLD, &sa, NULL);
 
-    /* 2.1 - Socket TCP de escuta */
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0)
     {
@@ -216,7 +238,6 @@ int main(int argc, char *argv[])
     printf("Industrial Edge Agent escutando na porta %d (compress=%d, encrypt=%d)\n",
            cfg.port, cfg.use_compress, cfg.use_encrypt);
 
-    /* 2.2 - fork() por conexao */
     while (1)
     {
         struct sockaddr_in client_addr;
