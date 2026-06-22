@@ -1,0 +1,2 @@
+sem TLS (10 conexoes): 10.099s | media: 1.010s por conexao
+com TLS (10 conexoes): 10.052s | media: 1.005s por conexao

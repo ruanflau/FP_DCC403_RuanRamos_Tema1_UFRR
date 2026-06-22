@@ -1,0 +1,10 @@
+=== ORIGINAIS ===
+uname -a: 136
+services: 12813
+dmesg: 0
+=== COMPRIMIDOS ===
+uname -a comprimido: 141
+services comprimido: 5370
+dmesg comprimido: 20
+syslog: 3553974
+syslog comprimido: 347661

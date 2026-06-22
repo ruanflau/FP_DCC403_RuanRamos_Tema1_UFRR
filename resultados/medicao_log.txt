@@ -1,0 +1,3 @@
+=== LOG DE AUDITORIA ===
+Linhas: 13
+Bytes: 26840
