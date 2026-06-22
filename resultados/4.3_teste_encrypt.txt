@@ -1,0 +1,9 @@
+Script started on 2026-06-22 09:06:02-04:00 [COMMAND="./control_proxy --host=127.0.0.1 --port=9095 --encrypt" TERM="xterm-256color" TTY="/dev/pts/1" COLUMNS="115" LINES="56"]
+Conectado a 127.0.0.1:9095 (compress=0, encrypt=1)
+Pressione Ctrl+D para encerrar a sessao.
+
+uname -a
+
+Conexao encerrada pelo servidor.
+
+Script done on 2026-06-22 09:11:32-04:00 [COMMAND_EXIT_CODE="0"]

@@ -1,0 +1,69 @@
+Can't use SSL_get_servername
+depth=0 C = BR, ST = Roraima, L = Boa Vista, O = UFRR, CN = Ruan, emailAddress = ruanflauriano@gmail.com
+verify error:num=18:self-signed certificate
+verify return:1
+depth=0 C = BR, ST = Roraima, L = Boa Vista, O = UFRR, CN = Ruan, emailAddress = ruanflauriano@gmail.com
+verify return:1
+CONNECTED(00000003)
+---
+Certificate chain
+ 0 s:C = BR, ST = Roraima, L = Boa Vista, O = UFRR, CN = Ruan, emailAddress = ruanflauriano@gmail.com
+   i:C = BR, ST = Roraima, L = Boa Vista, O = UFRR, CN = Ruan, emailAddress = ruanflauriano@gmail.com
+   a:PKEY: rsaEncryption, 4096 (bit); sigalg: RSA-SHA256
+   v:NotBefore: Jun 19 19:31:31 2026 GMT; NotAfter: Jun 19 19:31:31 2027 GMT
+---
+Server certificate
+-----BEGIN CERTIFICATE-----
+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
+jrL2gE6UJQ==
+-----END CERTIFICATE-----
+subject=C = BR, ST = Roraima, L = Boa Vista, O = UFRR, CN = Ruan, emailAddress = ruanflauriano@gmail.com
+issuer=C = BR, ST = Roraima, L = Boa Vista, O = UFRR, CN = Ruan, emailAddress = ruanflauriano@gmail.com
+---
+No client certificate CA names sent
+Peer signing digest: SHA256
+Peer signature type: RSA-PSS
+Server Temp Key: X25519, 253 bits
+---
+SSL handshake has read 2307 bytes and written 373 bytes
+Verification error: self-signed certificate
+---
+New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384
+Server public key is 4096 bit
+Secure Renegotiation IS NOT supported
+Compression: NONE
+Expansion: NONE
+No ALPN negotiated
+Early data was not sent
+Verify return code: 18 (self-signed certificate)
+---

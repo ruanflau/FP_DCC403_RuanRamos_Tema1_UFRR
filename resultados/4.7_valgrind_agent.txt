@@ -1,0 +1,45 @@
+==10490== Memcheck, a memory error detector
+==10490== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==10490== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==10490== Command: ./industrial_agent --port=9095
+==10490== 
+==10502== 
+==10502== HEAP SUMMARY:
+==10502==     in use at exit: 0 bytes in 0 blocks
+==10502==   total heap usage: 1 allocs, 1 frees, 1,024 bytes allocated
+==10502== 
+==10502== All heap blocks were freed -- no leaks are possible
+==10502== 
+==10502== For lists of detected and suppressed errors, rerun with: -s
+==10502== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+==10490== 
+==10490== Process terminating with default action of signal 2 (SIGINT)
+==10490==    at 0x4F76834: accept (accept.c:26)
+==10490==    by 0x10B3C7: main (agent.c:245)
+==10490== 
+==10490== HEAP SUMMARY:
+==10490==     in use at exit: 1,024 bytes in 1 blocks
+==10490==   total heap usage: 1 allocs, 0 frees, 1,024 bytes allocated
+==10490== 
+==10490== 1,024 bytes in 1 blocks are still reachable in loss record 1 of 1
+==10490==    at 0x4846828: malloc (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
+==10490==    by 0x4ED01B4: _IO_file_doallocate (filedoalloc.c:101)
+==10490==    by 0x4EE0523: _IO_doallocbuf (genops.c:347)
+==10490==    by 0x4EDDF8F: _IO_file_overflow@@GLIBC_2.2.5 (fileops.c:745)
+==10490==    by 0x4EDEAAE: _IO_new_file_xsputn (fileops.c:1244)
+==10490==    by 0x4EDEAAE: _IO_file_xsputn@@GLIBC_2.2.5 (fileops.c:1197)
+==10490==    by 0x4EABCC8: __printf_buffer_flush_to_file (printf_buffer_to_file.c:59)
+==10490==    by 0x4EABCC8: __printf_buffer_to_file_done (printf_buffer_to_file.c:120)
+==10490==    by 0x4EB6742: __vfprintf_internal (vfprintf-internal.c:1545)
+==10490==    by 0x4EAB1B2: printf (printf.c:33)
+==10490==    by 0x10B39F: main (agent.c:238)
+==10490== 
+==10490== LEAK SUMMARY:
+==10490==    definitely lost: 0 bytes in 0 blocks
+==10490==    indirectly lost: 0 bytes in 0 blocks
+==10490==      possibly lost: 0 bytes in 0 blocks
+==10490==    still reachable: 1,024 bytes in 1 blocks
+==10490==         suppressed: 0 bytes in 0 blocks
+==10490== 
+==10490== For lists of detected and suppressed errors, rerun with: -s
+==10490== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

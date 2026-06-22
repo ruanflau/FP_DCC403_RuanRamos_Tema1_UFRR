@@ -1,0 +1,23 @@
+Script started on 2026-06-21 18:17:40-04:00 [COMMAND="./control_proxy --host=127.0.0.1 --port=9095" TERM="xterm-256color" TTY="/dev/pts/6" COLUMNS="115" LINES="56"]
+Conectado a 127.0.0.1:9095 (compress=0, encrypt=0)
+Pressione Ctrl+D para encerrar a sessao.
+
+uname -a
+Linux LauriComputador 6.17.0-35-generic #35~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue May 26 19:30:42 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
+ls
+certs
+control_proxy
+docs
+industrial_agent
+LICENSE
+logs
+Makefile
+obj
+README.md
+resultados
+src
+test_compress
+pwd
+/home/ruanflau/Documents/FP_DCC403_RuanRamos_Tema1_UFRR
+^D
+Script done on 2026-06-21 18:18:30-04:00 [COMMAND_EXIT_CODE="0"]
